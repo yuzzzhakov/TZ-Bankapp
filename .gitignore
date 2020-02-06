@@ -1,0 +1,20 @@
+/.idea/*
+/wenv/*
+/lenv/*
+/envl/*
+/envw/*
+/env/*
+
+# Django #
+*.log
+*.pot
+*.pyc
+__pycache__
+
+# Python #
+*.py[cod]
+*$py.class
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt

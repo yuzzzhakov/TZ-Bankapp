@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bank</title>
+</head>
+
+<body>
+
+    <h2>Users:</h2>
+
+    {% for user in users %}
+        [{{user.id}}]<br>
+        Name: {{ user.name }}<br>
+        Surname: {{ user.surname }}<br>
+        Phone Number: {{ user.phone_number }}<br>
+        <h4>----Accounts:</h4>
+        {% for account in user.account_set.all %}
+            ----({{account.id}})<br>
+            ----Account Owner Info: {{ account.owner_info }}<br>
+            ----Account Number: {{ account.number }}<br>
+            ----Account Balance: {{ account.balance }}<br>
+            ----Account Currency: {{ account.currency }}<br>
+            <h4>--------Bank Cards:</h4>
+                {% for bankcard in account.bankcard_set.all %}
+                    --------({{bankcard.id}})<br>
+                    --------Bank Card Number: {{ bankcard.number }}<br>
+                    --------Bank Card End Date: {{ bankcard.end_date }}<br>
+                    --------Balance: {{ account.balance }}<br>
+                    --------Currency: {{ account.currency }}<br>
+                {% endfor %}
+            <br>
+        {% endfor %}
+    {% endfor %}
+    <br>
+    <br>
+
+    <h2>Accounts:</h2>
+
+    {% for account in accounts %}
+        [{{ account.id }}]<br>
+        Owner Info: {{ account.owner_info }}<br>
+        Balance: {{ account.balance }}<br>
+        Currency: {{ account.currency }}<br>
+        {% if account.user %}
+            User: {{ account.user }} {{ account.user.id }}<br>
+        {% endif %}
+        <br>
+    {% endfor %}
+
+
+</body>
+</html>

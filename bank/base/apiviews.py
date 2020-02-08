@@ -3,10 +3,11 @@ from rest_framework.views import APIView
 from .serializers import *
 from rest_framework import status
 from django.utils import timezone
-from django.http import Http404
 from rest_framework.viewsets import ModelViewSet
 from django.conf import settings
 from django.core.mail import send_mail
+from .constants import CURR
+from .utils import get_bankcard_transactions
 
 
 class UserViewSetApi(ModelViewSet):
@@ -26,21 +27,47 @@ class BankCardApi(APIView):
         return Response(serializer.data)
 
     def post(self, request, format=None):
-        account_id = request.data["account_id"]
+        try:
+            account_id = request.data["account_id"]
+        except Exception:
+            return Response('no account_id', status=status.HTTP_400_BAD_REQUEST)
         if account_id == "new":
-            user_id = request.data["user_id"]
-            currency = request.data["currency"]
+            try:
+                user_id = request.data["user_id"]
+            except Exception:
+                return Response('no user_id', status=status.HTTP_400_BAD_REQUEST)
+            try:
+                currency = request.data["currency"]
+            except Exception:
+                return Response('no currency', status=status.HTTP_400_BAD_REQUEST)
             if user_id == "new":
-                name = request.data["name"]
-                surname = request.data["surname"]
-                phone_number = request.data["phone_number"]
-                user_id = self.user_create(name, surname, phone_number)
-                account_id = self.account_create(user_id, currency)
+                try:
+                    name = request.data["name"]
+                    surname = request.data["surname"]
+                    phone_number = request.data["phone_number"]
+                except Exception:
+                    return Response('no name, surname or phone_number', status=status.HTTP_400_BAD_REQUEST)
+                user = self.user_create(name, surname, phone_number)
+                try:
+                    account_id = self.account_create(user, currency)
+                except Exception:
+                    return Response('invalid currency', status=status.HTTP_400_BAD_REQUEST)
             else:
-                account_id = self.account_create(user_id, currency)
+                try:
+                    user = User.objects.get(id=user_id)
+                except Exception:
+                    return Response('invalid user_id', status=status.HTTP_400_BAD_REQUEST)
+                try:
+                    account_id = self.account_create(user, currency)
+                except Exception:
+                    return Response('invalid currency', status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            account = Account.objects.get(id=account_id)
+        except Exception:
+            return Response('invalid account_id', status=status.HTTP_400_BAD_REQUEST)
 
         data = {"account": account_id}
-        account = Account.objects.get(id=account_id)
 
         serializer = BankCardSerializer(data=data)
         if serializer.is_valid():
@@ -78,39 +105,62 @@ class BankCardApi(APIView):
             surname=surname,
             phone_number=phone_number,
         )
-        return new_user.id
+        return new_user
 
-    def account_create(self, user_id, currency):
-        new_acc = Account.objects.create(
-            owner_info="User account",
-            balance=0,
-            currency=currency,
-            user=User.objects.get(id=user_id)
-        )
-        return new_acc.id
+    def account_create(self, user, currency):
+        if currency in CURR:
+            new_acc = Account.objects.create(
+                owner_info="User account",
+                balance=0,
+                currency=currency,
+                user=user
+            )
+            return new_acc.id
+        else:
+            raise Exception
 
 
 class BankCardBalanceApi(APIView):
     def get_object(self, number):
-        try:
-            return BankCard.objects.get(number=number)
-        except BankCard.DoesNotExist:
-            raise Http404
+        bankcard = BankCard.objects.get(number=number)
+        return bankcard
 
     def get(self, request, number, format=None):
-        bankcard = self.get_object(number)
+        try:
+            bankcard = self.get_object(number)
+        except Exception:
+            return Response('no card with this card_number', status=status.HTTP_404_NOT_FOUND)
         data = {"balance": bankcard.account.balance, "currency": bankcard.account.currency}
         return Response(data)
 
 
 class BankCardRefill(APIView):
     def post(self, request, format=None):
-        card_number = request.data["card_number"]
-        sum = request.data["sum"]
-        currency = request.data["currency"]
+        try:
+            card_number = request.data["card_number"]
+        except Exception:
+            return Response('no card_number', status=status.HTTP_400_BAD_REQUEST)
+        try:
+            sum = request.data["sum"]
+        except Exception:
+            return Response('no sum', status=status.HTTP_400_BAD_REQUEST)
+        try:
+            currency = request.data["currency"]
+        except Exception:
+            return Response('no currency', status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            bankcard_account = BankCard.objects.get(number=card_number).account
+        except Exception:
+            return Response('invalid card_number', status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if currency != "RUB":
+                raise Exception
+        except Exception:
+            return Response('only RUB available', status=status.HTTP_400_BAD_REQUEST)
 
         master_account = Account.objects.get(id=2)
-        bankcard_account = BankCard.objects.get(number=card_number).account
 
         transaction = Transaction.objects.create(
             sum=sum,
@@ -131,14 +181,34 @@ class BankCardRefill(APIView):
 
 class BankCardPayment(APIView):
     def post(self, request, format=None):
-        inn = request.data["inn"]
-        sum = request.data["sum"]
-        currency = request.data["currency"]
-        card_number = request.data["card_number"]
-        mail = request.data["mail"]
-
-        bankcard_account = BankCard.objects.get(number=card_number).account
-        organisation_account = Account.objects.get(owner_info=inn)
+        try:
+            inn = request.data["inn"]
+        except Exception:
+            return Response('no inn', status=status.HTTP_400_BAD_REQUEST)
+        try:
+            sum = request.data["sum"]
+        except Exception:
+            return Response('no sum', status=status.HTTP_400_BAD_REQUEST)
+        try:
+            currency = request.data["currency"]
+        except Exception:
+            return Response('no currency', status=status.HTTP_400_BAD_REQUEST)
+        try:
+            card_number = request.data["card_number"]
+        except Exception:
+            return Response('no card_number', status=status.HTTP_400_BAD_REQUEST)
+        try:
+            mail = request.data["mail"]
+        except Exception:
+            return Response('no mail', status=status.HTTP_400_BAD_REQUEST)
+        try:
+            bankcard_account = BankCard.objects.get(number=card_number).account
+        except Exception:
+            return Response('invalid card_number', status=status.HTTP_404_NOT_FOUND)
+        try:
+            organisation_account = Account.objects.get(owner_info=inn)
+        except Exception:
+            return Response('invalid inn', status=status.HTTP_400_BAD_REQUEST)
 
         transaction = Transaction.objects.create(
             sum=sum,
@@ -163,38 +233,11 @@ class BankCardPayment(APIView):
 
 class BankCardTransactions(APIView):
     def get(self, request, bankcard_number, n, format=None):
-        account = BankCard.objects.get(number=bankcard_number).account
-        transactions = []
-        inner_transactions_from = InnerTransaction.objects.filter(trans_from=account).values("transaction_id")
-        if inner_transactions_from:
-            transactions.extend(inner_transactions_from)
-        inner_transactions_to = InnerTransaction.objects.filter(trans_to=account).values("transaction_id")
-        if inner_transactions_to:
-            transactions.extend(inner_transactions_to)
-        tooutertransaction = ToOuterTransaction.objects.filter(trans_from=account).values("transaction_id")
-        if tooutertransaction:
-            transactions.extend(tooutertransaction)
-        fromoutertransaction = FromOuterTransaction.objects.filter(trans_to=account).values("transaction_id")
-        if fromoutertransaction:
-            transactions.extend(fromoutertransaction)
+        try:
+            account = BankCard.objects.get(number=bankcard_number).account
+        except Exception:
+            return Response('invalid card_number', status=status.HTTP_404_NOT_FOUND)
 
-        for element in transactions:
-            element.update({"date_time": Transaction.objects.get(id=element["transaction_id"]).date_time})
-
-        transactions = sorted(transactions, key=lambda x: x["date_time"], reverse=True)
-        j = len(transactions)
-        data = list()
-
-        for i in range(n):
-            if i < j:
-                transaction = Transaction.objects.get(id=transactions[i]["transaction_id"])
-                data.append({
-                    "transaction_id": transaction.id,
-                    "date_time": str(transaction.date_time),
-                    "sum": transaction.sum,
-                    "currency": transaction.currency
-                })
-            else:
-                break
+        data = get_bankcard_transactions(account, n)
 
         return Response(data)

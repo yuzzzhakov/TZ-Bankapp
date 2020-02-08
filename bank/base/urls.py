@@ -5,12 +5,16 @@ from rest_framework.routers import SimpleRouter
 
 
 router = SimpleRouter()
-router.register('api/users/', UserViewSetApi)
-router.register('api/accounts/', AccountViewSetApi)
+router.register('api/users', UserViewSetApi)
+router.register('api/accounts', AccountViewSetApi)
 
 
 urlpatterns = [
-    path('', InfoListView.as_view()),
+    path('', ControlPanel.as_view(), name='control-panel'),
+    path('<int:card_id>/', CardTransactionsView.as_view(), name='card-transactions'),
+    path('system_info/', InfoListView.as_view(), name='info-list'),
+    path('master_account_refill/', MasterAccountRefill.as_view(), name='master-account-refill'),
+    path('new_org_account/', NewOrgAccount.as_view(), name='new-org-account'),
 ]
 
 api_urlpatterns = [

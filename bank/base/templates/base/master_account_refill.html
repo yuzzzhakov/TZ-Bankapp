@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+    <h1>Master Account Refill</h1>
+    <a href="{% url 'control-panel' %}">Back to Control Panel</a><br><br>
+
+    {% if message %}
+        {{ message }}<br>
+    {% endif %}
+
+    Master Account Balance: {{ balance }} RUB<br><br>
+
+    {% if form %}
+        <form action="{% url 'master-account-refill' %}" method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                {% if field.errors %}
+                    {{ field.errors }}
+                {% endif %}
+                Balance refill, RUB:
+                {{ field }}
+            {% endfor %}
+            <button type="submit">Refill</button>
+        </form>
+    {% endif %}
+
+{% endblock content %}

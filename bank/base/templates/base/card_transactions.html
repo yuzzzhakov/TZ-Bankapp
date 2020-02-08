@@ -1,0 +1,15 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+    <h1>Control Panel</h1>
+    <a href="{% url 'control-panel' %}">Back to Control Panel</a><br><br>
+
+    <h3>Bank Card Transactions (Card ID: {{ card_id }}):</h3>
+    {% for dict in data %}
+        {{ dict }}<br>
+    {% endfor %}
+    <br>
+    <br>
+
+
+{% endblock content %}

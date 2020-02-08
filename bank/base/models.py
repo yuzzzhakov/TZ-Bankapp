@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import date, timedelta
 from django.core.exceptions import ValidationError
 import random
-from .utils import CURRENCIES
+from .constants import CURRENCIES
 
 
 class User(models.Model):
@@ -18,7 +18,7 @@ class User(models.Model):
 class Account(models.Model):
     owner_info = models.CharField(max_length=30)
     number = models.CharField(max_length=16, unique=True, editable=False)
-    balance = models.FloatField()
+    balance = models.IntegerField()
     currency = models.CharField(choices=CURRENCIES, max_length=3)
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
@@ -59,7 +59,7 @@ class BankCard(models.Model):
 
 
 class Transaction(models.Model):
-    sum = models.FloatField()
+    sum = models.IntegerField()
     currency = models.CharField(choices=CURRENCIES, max_length=3)
     date_time = models.DateTimeField(default=timezone.now)
     STATUSES = [

@@ -1,0 +1,77 @@
+{% extends "base/base.html" %}
+{% block content %}
+
+    <h1>System Info</h1>
+    <a href="{% url 'control-panel' %}">Back to Control Panel</a><br><br>
+
+    <h2>Users:</h2>
+
+    {% for user in users %}
+        User ID: [{{user.id}}]<br>
+        Name: {{ user.name }}<br>
+        Surname: {{ user.surname }}<br>
+        Phone Number: {{ user.phone_number }}<br>
+        <h4>&emsp;Accounts:</h4>
+        {% for account in user.account_set.all %}
+            &emsp;Account ID: [{{account.id}}]<br>
+            &emsp;Account Owner Info: {{ account.owner_info }}<br>
+            &emsp;Account Number: {{ account.number }}<br>
+            &emsp;Account Balance: {{ account.balance }}<br>
+            &emsp;Account Currency: {{ account.currency }}<br>
+            <h4>&emsp;&emsp;Bank Cards:</h4>
+                {% for bankcard in account.bankcard_set.all %}
+                 &emsp;&emsp;Bank Card ID [{{bankcard.id}}]<br>
+                 &emsp;&emsp;Bank Card Number: {{ bankcard.number }}<br>
+                 &emsp;&emsp;Bank Card End Date: {{ bankcard.end_date }}<br>
+                 &emsp;&emsp;Balance: {{ account.balance }}<br>
+                 &emsp;&emsp;Currency: {{ account.currency }}<br>
+                {% endfor %}
+            <br>
+        {% endfor %}
+    {% endfor %}
+    <br>
+    <br>
+
+    <h2>Accounts:</h2>
+
+    {% for account in accounts %}
+        Account ID: [{{ account.id }}]<br>
+        Owner Info: {{ account.owner_info }}<br>
+        Balance: {{ account.balance }}<br>
+        Currency: {{ account.currency }}<br>
+        {% if account.user %}
+            User: {{ account.user }} {{ account.user.id }}<br>
+        {% endif %}
+        <br>
+    {% endfor %}
+
+    <h2>Transactions:</h2>
+
+    {% for transaction in transactions %}
+        Transaction ID: [{{ transaction.id }}]<br>
+        Sum: {{ transaction.sum}}<br>
+        Currency: {{ transaction.currency }}<br>
+        Date Time: {{ transaction.date_time }}<br>
+        Status: {{ transaction.status }}<br>
+
+        {% if transaction.innertransaction %}
+            Type: Inner Transaction<br>
+            Account ID Trans from: [{{ transaction.innertransaction.trans_from.id }}] {{ transaction.innertransaction.trans_from.owner_info }}<br>
+            Account ID Trans to: [{{ transaction.innertransaction.trans_to.id }}]<br>
+        {% endif %}
+
+        {% if transaction.tooutertransaction %}
+            Type: To Outer Transaction<br>
+            Account ID Trans from: [{{ transaction.tooutertransaction.trans_from.id }}] {{ transaction.tooutertransaction.trans_from.id.owner_info }}<br>
+            Info Trans to: {{ transaction.tooutertransaction.trans_to }}<br>
+        {% endif %}
+
+        {% if transaction.toinnertransaction %}
+            Type: To Inner Transaction<br>
+            Info Trans from: {{ transaction.innertransaction.trans_from }}<br>
+            Account ID Trans to: [{{ transaction.toinnertransaction.trans_to.id }}] {{ transaction.toinnertransaction.trans_to.id.owner_info }}<br>
+        {% endif %}
+        <br>
+    {% endfor %}
+
+{% endblock content %}

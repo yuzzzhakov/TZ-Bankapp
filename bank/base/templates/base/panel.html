@@ -1,0 +1,23 @@
+{% extends "base/base.html" %}
+{% block content %}
+<h1>Control Panel</h1>
+
+<a href="{% url 'info-list' %}">System Info</a><br>
+<a href="{% url 'master-account-refill' %}">Master Account Refill</a><br>
+<a href="{% url 'new-org-account' %}">Add company account</a><br>
+
+<h3>All Bank Cards:</h3>
+{% for card in bankcards %}
+    Card ID: {{ card.id }}<br>
+    Card Number: {{ card.number }}<br>
+    Card End Date: {{ card.end_date }}<br>
+    Card Balance: {{ card.account.balance }} {{ card.account.currency }}<br>
+    Card Owner: {{ card.account.user.name }} {{ card.account.user.surname }}<br>
+    <a href="{% url 'card-transactions' card.id %}">Card Transactions</a>
+{% endfor %}
+
+<br>
+<br>
+
+
+{% endblock content %}
